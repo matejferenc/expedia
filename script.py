@@ -7,6 +7,7 @@ from operator import itemgetter
 from heapq import nlargest
 from operator import itemgetter
 from collections import defaultdict
+from datetime import datetime
 
 # validation ###############
 validate = 1  # 1 - validation, 0 - submission
@@ -33,7 +34,9 @@ def run_solution():
     distances2 = {}
     cities = {}
     best_hotels_ulc_sdi = defaultdict(lambda: defaultdict(int))
+    best_hotels_days = defaultdict(lambda: defaultdict(int))
 
+    dateFormat = "%Y-%m-%d"
 
     # Calc counts
     while 1:
@@ -52,6 +55,8 @@ def run_solution():
         orig_destination_distance = arr[6]
         user_id = int(arr[7])
         is_package = int(arr[9])
+        srch_ci = arr[11]
+        srch_co = arr[12]
         srch_destination_id = arr[16]
         is_booking = int(arr[18])
         hotel_country = arr[21]
@@ -82,8 +87,24 @@ def run_solution():
         if orig_destination_distance != '':
             distances2[(user_location_city, srch_destination_id)] = orig_destination_distance
         
+        
+        if srch_ci != '' and srch_co != '':
+            days = (datetime.strptime(srch_co, dateFormat) - datetime.strptime(srch_ci, dateFormat)).days
+            best_hotels_days[days][hotel_cluster] += 1
 
+        
     f.close()
+    
+    for i in sorted(best_hotels_days.keys()):
+        print(i)
+        t = nlargest(10, sorted(best_hotels_days[i].items()), key=itemgetter(1))
+        line = ""
+        for k in range(len(t)):
+            line += ", " + t[k][0]
+        print line
+#             print("%8s %8s %8s %8s %8s %8s %8s %8s %8s %8s" % (t[0][0],t[1][0],t[2][0],t[3][0],t[4][0],t[5][0],t[6][0],t[7][0],t[8][0],t[9][0]))
+
+#         print('{}, '.format(best_hotels_days[i][j]))
     ###########################
     if validate == 1:
         print('Enhancing...')
@@ -138,8 +159,8 @@ def run_solution():
     else:
         print('Generate submission...')
         f = open("../../expedia/test.csv", "r")
-    now = datetime.datetime.now()
-    path = 'submission_' + str(now.strftime("%Y-%m-%d-%H-%M")) + '.csv'
+    nowTime = now()
+    path = 'submission_' + str(nowTime.strftime("%Y-%m-%d-%H-%M")) + '.csv'
     out = open(path, "w")
     header = f.readline()
     total = 0
@@ -301,11 +322,8 @@ def run_solution():
         print("MAP@5 = %8.4f " % (scores*1.0/totalv))
         
         
-        list1, list2 = zip(*sorted(zip(clusterCounts, range(len(clusterCounts)))))
-        print(list1)
-                    
-#         for i in zip(*sorted(zip(range(len(clusterCounts)), clusterCounts), key=itemgetter(1))):
-#             print('{}    {}'.format(i+1, clusterCounts[i]))
+        for i in sorted(clusterCounts.items(), key=itemgetter(1)):
+            print i
     # <<< validation
 
 run_solution()

@@ -12,7 +12,7 @@ from datetime import datetime
 # validation ###############
 validate = 1  # 1 - validation, 0 - submission
 N0 = 10       # total number of parts
-N1 = 3        # number of part
+N1 = 2        # number of part
 #--------------------------
 
 
@@ -35,6 +35,7 @@ def run_solution():
     cities = {}
     best_hotels_ulc_sdi = defaultdict(lambda: defaultdict(int))
     best_hotels_days = defaultdict(lambda: defaultdict(int))
+    best_hotels_days_booking = defaultdict(lambda: defaultdict(int))
 
     dateFormat = "%Y-%m-%d"
 
@@ -90,7 +91,9 @@ def run_solution():
         
         if srch_ci != '' and srch_co != '':
             days = (datetime.strptime(srch_co, dateFormat) - datetime.strptime(srch_ci, dateFormat)).days
+            month = datetime.strptime(srch_ci, dateFormat).month
             best_hotels_days[days][hotel_cluster] += 1
+            best_hotels_days_booking[(days, hotel_country)][hotel_cluster] += append_2
 
         
     f.close()
@@ -100,11 +103,9 @@ def run_solution():
         t = nlargest(10, sorted(best_hotels_days[i].items()), key=itemgetter(1))
         line = ""
         for k in range(len(t)):
-            line += ", " + t[k][0]
+            line += t[k][0] + ", "
         print line
-#             print("%8s %8s %8s %8s %8s %8s %8s %8s %8s %8s" % (t[0][0],t[1][0],t[2][0],t[3][0],t[4][0],t[5][0],t[6][0],t[7][0],t[8][0],t[9][0]))
 
-#         print('{}, '.format(best_hotels_days[i][j]))
     ###########################
     if validate == 1:
         print('Enhancing...')
@@ -133,9 +134,9 @@ def run_solution():
             user_id = int(arr[7])
             srch_destination_id = arr[16]
             if user_id % N0 != N1:
-               continue
+                continue
             if is_booking == 0:
-               continue
+                continue
         else:
             user_location_country = arr[4]
             user_location_region = arr[5]
@@ -159,7 +160,7 @@ def run_solution():
     else:
         print('Generate submission...')
         f = open("../../expedia/test.csv", "r")
-    nowTime = now()
+    nowTime = datetime.now()
     path = 'submission_' + str(nowTime.strftime("%Y-%m-%d-%H-%M")) + '.csv'
     out = open(path, "w")
     header = f.readline()
@@ -169,12 +170,12 @@ def run_solution():
     topclasters = nlargest(5, sorted(popular_hotel_cluster.items()), key=itemgetter(1))
     
     clusterCounts = defaultdict(int)
-
+    
     while 1:
         line = f.readline().strip()
         total += 1
-#         if total % 1000000 == 0:
-#             print('Write {} lines...'.format(total))
+        if total % 1000000 == 0:
+            print('Write {} lines...'.format(total))
 
         if line == '':
             break
@@ -189,6 +190,8 @@ def run_solution():
             orig_destination_distance = arr[6]
             user_id = int(arr[7])
             is_package = int(arr[9])
+            srch_ci = arr[11]
+            srch_co = arr[12]
             srch_destination_id = arr[16]
             is_booking = int(arr[18])
             hotel_country = arr[21]
@@ -196,9 +199,9 @@ def run_solution():
             hotel_cluster = arr[23]
             id = 0
             if user_id % N0 != N1:
-               continue
+                continue
             if is_booking == 0:
-               continue
+                continue
         else:
             id = arr[0]
             user_location_country = arr[4]
@@ -207,6 +210,8 @@ def run_solution():
             orig_destination_distance = arr[7]
             user_id = int(arr[8])
             is_package = int(arr[10])
+            srch_ci = arr[12]
+            srch_co = arr[13]
             srch_destination_id = arr[17]
             hotel_country = arr[20]
             hotel_market = arr[21]
@@ -217,25 +222,43 @@ def run_solution():
         filled = []
         
         
-        if orig_destination_distance == '':
-            if (user_id, srch_destination_id) in distances:
-                orig_destination_distance = distances[(user_id, srch_destination_id)]
-                user_location_city = cities[(user_id, srch_destination_id)]
-            elif (user_location_city, srch_destination_id) in distances2:
-                orig_destination_distance = distances2[(user_location_city, srch_destination_id)]
-  
+#         if orig_destination_distance == '':
+#             if (user_id, srch_destination_id) in distances:
+#                 orig_destination_distance = distances[(user_id, srch_destination_id)]
+#                 user_location_city = cities[(user_id, srch_destination_id)]
+#             elif (user_location_city, srch_destination_id) in distances2:
+#                 orig_destination_distance = distances2[(user_location_city, srch_destination_id)]
+#   
 
-        s1 = (user_location_city, orig_destination_distance)
-        if s1 in best_hotels_od_ulc:
-            d = best_hotels_od_ulc[s1]
-            topitems = nlargest(1, sorted(d.items()), key=itemgetter(1))
-            for i in range(len(topitems)):
-                out.write(' ' + topitems[i][0])
-                filled.append(topitems[i][0])
-                clusterCounts[int(topitems[i][0])] += 1
-                if validate == 1:
-                    if topitems[i][0] == hotel_cluster:
-                        hits[len(filled)] +=1
+        if srch_ci != '' and srch_co != '':
+            days = (datetime.strptime(srch_co, dateFormat) - datetime.strptime(srch_ci, dateFormat)).days
+            month = datetime.strptime(srch_ci, dateFormat).month
+            s6 = (days, hotel_country)
+            if s6 in best_hotels_days_booking:
+                d = best_hotels_days_booking[s6]
+                topitems = nlargest(5, d.items(), key=itemgetter(1))
+                for i in range(len(topitems)):
+                    if len(filled) == 5:
+                        break
+                    if topitems[i][0] in filled:
+                        continue
+                    out.write(' ' + topitems[i][0])
+                    filled.append(topitems[i][0])
+                    if validate == 1:
+                        if topitems[i][0]==hotel_cluster:
+                            hits[len(filled)] +=1
+
+#         s1 = (user_location_city, orig_destination_distance)
+#         if s1 in best_hotels_od_ulc:
+#             d = best_hotels_od_ulc[s1]
+#             topitems = nlargest(1, sorted(d.items()), key=itemgetter(1))
+#             for i in range(len(topitems)):
+#                 out.write(' ' + topitems[i][0])
+#                 filled.append(topitems[i][0])
+#                 clusterCounts[int(topitems[i][0])] += 1
+#                 if validate == 1:
+#                     if topitems[i][0] == hotel_cluster:
+#                         hits[len(filled)] +=1
                            
 #         s3 = (user_location_region, srch_destination_id)
 #         if orig_destination_distance == '' and s3 in best_hotels_ulc_sdi:
@@ -248,11 +271,9 @@ def run_solution():
 #                     continue
 #                 out.write(' ' + topitems[i][0])
 #                 filled.append(topitems[i][0])
-#                 tries += 1
 #                 if validate == 1:
 #                     if topitems[i][0]==hotel_cluster:
 #                         hits[len(filled)] +=1
-#                         s3Count += 1
 #   
 #                         
 #         s2 = (srch_destination_id, hotel_country, hotel_market, is_package)
@@ -267,8 +288,8 @@ def run_solution():
 #                 out.write(' ' + topitems[i][0])
 #                 filled.append(topitems[i][0])
 #                 if validate == 1:
-#                    if topitems[i][0]==hotel_cluster:
-#                       hits[len(filled)] +=1
+#                     if topitems[i][0]==hotel_cluster:
+#                         hits[len(filled)] +=1
 #                       
 #         s4 = hotel_country 
 #         if s4 in best_hotel_country:
@@ -307,9 +328,9 @@ def run_solution():
     classified = 0
     if validate == 1:
         for jj in range(1,6):
-           scores +=  hits[jj]*1.0/jj
-           tp[jj] = hits[jj]*100.0/totalv
-           classified += hits[jj]
+            scores +=  hits[jj]*1.0/jj
+            tp[jj] = hits[jj]*100.0/totalv
+            classified += hits[jj]
         misclassified = totalv-classified
         miscp = misclassified*100.0/totalv
         print("")
@@ -327,4 +348,3 @@ def run_solution():
     # <<< validation
 
 run_solution()
-

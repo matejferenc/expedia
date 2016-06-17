@@ -27,6 +27,13 @@ def rmsle(p, a):
             print (math.log(p[i] + 1) - math.log(a[i] + 1)) ** 2
     return math.sqrt(sum / n)
 
+def removeZeroes(p):
+    removed = []
+    for i in range(3, 10):
+        if p[i] != 0:
+            removed.append(p[i])
+    return removed
+
 def run_solution():
     start_time = time.time()
     print('Preparing...')
@@ -53,6 +60,8 @@ def run_solution():
         arr = line.split(",")
         if validate == 1:
             semana = int(arr[0])
+            if semana == 0:
+                print "semana 0: {}".format(line)
             agencia_id = arr[1]
             canal_id = arr[2]
             ruta_sak = arr[3]
@@ -111,7 +120,6 @@ def run_solution():
             demanda_uni_equil = int(arr[10])
             if total % N0 != N1:
                 continue
-            a.append(demanda_uni_equil)
 #             p.append(math.fabs(venta_uni_hoy - dev_uni_proxima))
 #             if venta_uni_hoy - dev_uni_proxima < 0:
 #                 print "venta_uni_hoy - dev_uni_proxima < 0"
@@ -126,16 +134,24 @@ def run_solution():
 
             
         if (cliente_id, producto_id) in client_product_count:
+            a.append(demanda_uni_equil)
             counts = client_product_count[(cliente_id, producto_id)]
+#             print "counts {}".format(counts)
+            counts = removeZeroes(counts)
+#             print "removed zeros {}".format(counts)
             n = len(counts)
             sum = 0
-            for i in range(0, n - 1):
-                sum += counts[i]
-            p.append(sum / n)
+            if n != 0:
+                for i in range(0, n):
+                    sum += counts[i]
+                p.append(float(sum) / n)
+#                 print "n {}, sum {}, sum/n {}".format(n, sum, float(sum) / n)
+            else:
+                p.append(0)
             estimated += 1
-        else:
-            p.append(0)
-            notEstimated += 1
+#         else:
+#             p.append(0)
+#             notEstimated += 1
 
         
 #         out.write(str(id) + ',')
